@@ -11,6 +11,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // Seed initial data
+  await seedDatabase();
+
   // Menu Routes
   app.get(api.menu.list.path, async (req, res) => {
     const items = await storage.getMenuItems();
@@ -32,7 +35,10 @@ export async function registerRoutes(
       const order = await storage.createOrder(input);
       
       // SIMULATION: Automatically advance order status for demo purposes
-      simulateOrderStatus(order.id);
+      // Skip timers in tests to keep test runs deterministic and fast.
+      if (process.env.NODE_ENV !== "test") {
+        simulateOrderStatus(order.id);
+      }
       
       res.status(201).json(order);
     } catch (err) {
@@ -82,8 +88,10 @@ export async function seedDatabase() {
   const existingItems = await storage.getMenuItems();
   if (existingItems.length === 0) {
     console.log("Seeding database with menu items...");
-    await db.insert(menuItems).values([
+    const menuCollection = db.collection('menu_items');
+    await menuCollection.insertMany([
       {
+        id: 1,
         name: "Margherita Pizza",
         description: "Classic tomato sauce, fresh mozzarella, and basil.",
         price: 1299, // $12.99
@@ -91,6 +99,7 @@ export async function seedDatabase() {
         category: "Pizza"
       },
       {
+        id: 2,
         name: "Pepperoni Feast",
         description: "Loaded with pepperoni and extra cheese.",
         price: 1499,
@@ -98,6 +107,7 @@ export async function seedDatabase() {
         category: "Pizza"
       },
       {
+        id: 3,
         name: "Classic Cheeseburger",
         description: "Juicy beef patty, cheddar, lettuce, tomato, house sauce.",
         price: 1099,
@@ -105,13 +115,16 @@ export async function seedDatabase() {
         category: "Burger"
       },
       {
+        id: 4,
         name: "Spicy Chicken Burger",
         description: "Crispy chicken fillet with spicy mayo and pickles.",
         price: 1199,
+        // imageUrl: "https://images.unsplash.com/photo-1615297348928-867df3c467df?auto=format&fit=crop&w=500&q=80",
         imageUrl: "https://images.unsplash.com/photo-1615297348928-867df3c467df?auto=format&fit=crop&w=500&q=80",
         category: "Burger"
       },
       {
+        id: 5,
         name: "Caesar Salad",
         description: "Romaine lettuce, croutons, parmesan, caesar dressing.",
         price: 899,
@@ -119,6 +132,7 @@ export async function seedDatabase() {
         category: "Salads"
       },
       {
+        id: 6,
         name: "Truffle Fries",
         description: "Crispy fries tossed with truffle oil and parmesan.",
         price: 699,
@@ -129,3 +143,4 @@ export async function seedDatabase() {
     console.log("Database seeded!");
   }
 }
+
