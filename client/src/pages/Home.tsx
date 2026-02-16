@@ -1,36 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMenuItems } from "@/hooks/use-menu";
 import { MenuCard } from "@/components/MenuCard";
-import { SearchFilter } from "@/components/SearchFilter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { MenuItem } from "@shared/schema";
 
-const CATEGORIES = ["All", "Pizza", "Burger", "Salads", "Sides"];
+const CATEGORIES = ["All", "Pizza", "Burger", "Drinks", "Desserts"];
 
 export default function Home() {
+  const { data: menuItems, isLoading, error } = useMenuItems();
   const [activeCategory, setActiveCategory] = useState("All");
-  const [filters, setFilters] = useState({
-    search: '',
-    category: '',
-    minPrice: 0,
-    maxPrice: 5000,
-  });
-
-  const { data: allMenuItems, isLoading, error } = useQuery<MenuItem[]>({
-    queryKey: ['menu', filters],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
-      if (filters.maxPrice < 5000) params.append('maxPrice', filters.maxPrice.toString());
-
-      const res = await fetch(`/api/menu?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch menu');
-      return res.json();
-    },
-  });
 
   if (error) {
     return (
@@ -41,12 +19,7 @@ export default function Home() {
     );
   }
 
-  // Get unique categories from menu items
-  const categories = allMenuItems 
-    ? ['All', ...Array.from(new Set(allMenuItems.map(item => item.category)))]
-    : CATEGORIES;
-
-  const filteredItems = allMenuItems?.filter(
+  const filteredItems = menuItems?.filter(
     (item) => activeCategory === "All" || item.category === activeCategory
   );
 
@@ -62,31 +35,25 @@ export default function Home() {
           <p className="text-lg md:text-xl text-muted-foreground mb-8 text-balance">
             Choose from our selection of premium dishes made with fresh ingredients and love.
           </p>
+          
+          {/* Category Filter */}
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4">
+            {CATEGORIES.map((category) => (
+              <Button
+                key={category}
+                variant={activeCategory === category ? "default" : "outline"}
+                onClick={() => setActiveCategory(category)}
+                className="rounded-full px-6 transition-all"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Search and Filters */}
-        <SearchFilter 
-          onFilterChange={setFilters}
-          categories={categories.filter(c => c !== 'All')}
-        />
-
-        {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={activeCategory === category ? "default" : "outline"}
-              onClick={() => setActiveCategory(category)}
-              className="rounded-full px-6 transition-all"
-            >
-              {category}
-            </Button>
-          ))}
-        </div>
-
-        {/* Menu Grid */}
+      {/* Menu Grid */}
+      <div className="container mx-auto px-4 py-12">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -98,15 +65,11 @@ export default function Home() {
               </div>
             ))}
           </div>
-        ) : filteredItems && filteredItems.length > 0 ? (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map((item) => (
+            {filteredItems?.map((item) => (
               <MenuCard key={item.id} item={item} />
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No items found matching your criteria</p>
           </div>
         )}
       </div>
