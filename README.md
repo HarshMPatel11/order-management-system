@@ -61,6 +61,20 @@ npm run build
 npm start
 ```
 
+### Deploy on Vercel
+
+This repository is configured for Vercel with:
+- static frontend output in `dist/public`
+- serverless backend entrypoint in `api/[...all].ts`
+
+Set these environment variables in Vercel:
+- `DATABASE_URL`
+- `SESSION_SECRET`
+
+Notes:
+- API routes are available at `/api/*`.
+- WebSockets (`/ws`) are not available in Vercel serverless mode.
+
 ## API Endpoints
 
 - `GET /api/menu` - Get all menu items
